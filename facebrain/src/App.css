@@ -83,3 +83,21 @@ input {
   flex-wrap: wrap;
   pointer-events: none;
 }
+
+
+.center {
+  display: flex;
+  justify-content: center;
+}
+
+.ma {
+  margin: auto;
+}
+
+.mt2 {
+  margin-top: 2rem;
+}
+
+.absolute {
+  position: absolute;
+}

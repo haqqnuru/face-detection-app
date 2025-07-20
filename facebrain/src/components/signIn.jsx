@@ -38,9 +38,16 @@ onSubmitSignIn = () => {
     if (user.id) {
       this.props.loadUser(user);
       this.props.onRouteChange('home');
+    } else {
+      alert("Invalid credentials. Please try again.");
     }
   })
+  .catch(err => {
+    console.error("Error signing in:", err);
+    alert("Error signing in.");
+  });
 }
+
 
   render(){
       return ( 

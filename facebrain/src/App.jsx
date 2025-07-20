@@ -5,7 +5,7 @@ import Logo from './components/logo';
 import ImageLinkForm from './components/imageLinkForm';
 import Rank from './components/rank';
 import { RandomGradientBackground } from './components/extra';
-import FaceRecognision from './components/faceRecognision';
+import FaceRecognision from './components/faceRecognition';
 import SignIn from './components/signIn';
 import Register from './components/register';
 
@@ -89,46 +89,60 @@ class App extends Component {
   };
 
   // this helps detect the faces when pictue is submited
-  onButtonSubmit = () => {
-    this.setState({ imageUrl: this.state.input });
-  
-    fetch('http://localhost:3000/image', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: this.state.input,
-        id: this.state.user.id
-      })
+ onButtonSubmit = () => {
+  if (!this.state.input) {
+    console.log("No image URL provided");
+    return;
+  }
+
+  this.setState({ 
+    imageUrl: this.state.input,
+    boxes: [] // Clear previous boxes
+  });
+
+  fetch('http://localhost:3000/image', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      input: this.state.input,
+      id: this.state.user.id
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Returned data:", data);
-  
-        if (data.clarifaiResponse) {
-          const boxes = this.calculateFaceLocations(data.clarifaiResponse);
-          console.log("Calculated boxes:", boxes);
-          this.displayFaceBoxes(boxes);
-  
-          if (data.entries !== null) {
-            this.setState(prevState => {
-              const updatedUser = {
-                ...prevState.user,
-                entries: data.entries
-              };
-  
-              // Update localStorage with the new user data
-              localStorage.setItem('user', JSON.stringify(updatedUser));
-  
-              return { user: updatedUser };
-            });
-          } else {
-            console.log("No face regions found");
-          }
-        }
-      })
-      .catch(err => console.log(err));
-  };
-  
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log("API Response:", data);
+    
+    if (data.clarifaiResponse) {
+      const boxes = this.calculateFaceLocations(data.clarifaiResponse);
+      console.log("Calculated boxes:", boxes);
+      this.displayFaceBoxes(boxes);
+
+      if (data.entries !== undefined) {
+        const updatedUser = {
+          ...this.state.user,
+          entries: data.entries
+        };
+        
+        this.setState({ user: updatedUser });
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } else {
+      console.log("No face regions found in response");
+    }
+  })
+  .catch(err => {
+    console.error("Detection Error:", err);
+    this.setState({ 
+      boxes: [],
+      imageUrl: this.state.input // Still show the image even if detection fails
+    });
+  });
+};
   
   // this function handles navigation between different pages
   onRouteChange = (route) => {
